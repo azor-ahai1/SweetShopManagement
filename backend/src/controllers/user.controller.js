@@ -2,6 +2,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import {ApiError} from "../utils/ApiError.js"
 import { User } from "../models/user.model.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
+import { Purchase } from "../models/purchase.model.js";
 
 const registerUser = asyncHandler(async (req, res) => {
     const {name, email, password} = req.body
@@ -95,6 +96,40 @@ const loginUser = asyncHandler(async (req, res) => {
     )
 })
 
+const getCurrentUser = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+
+  const user = await User.findById(userId)
+    .populate("purchaseHistory")
+    .populate("sweet");
+
+  if (!user) {
+    return res.status(404).json(new ApiResponse(404, null, "User not found"));
+  }
+
+  return res.status(200).json(
+    new ApiResponse(200, user, "Current user retrieved successfully")
+  );
+});
+
+
+const getUserPurchaseHistory = asyncHandler(async (req, res) => {
+    const userId = req.user._id;
+
+    const purchases = await Purchase.find({ buyer: userId })
+        .populate("sweet")
+        .sort({ createdAt: -1 });
+
+    const totalPurchases = purchases.length;
+
+    return res.status(200).json(
+        new ApiResponse(200, {
+            purchases,
+            totalPurchases
+        }, "User purchase history retrieved successfully")
+    );
+});
+
 
 const generateAccessAndRefreshTokens = async(userId) => {
     try{
@@ -165,4 +200,4 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 })
 
 
-export {registerUser, loginUser};
+export {registerUser, loginUser, getUserPurchaseHistory, getCurrentUser};
