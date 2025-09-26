@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
-import { SweetCard } from "../components/index.js";
+import React, { useState, useEffect, useCallback } from "react";
+import { SweetCard, SearchAndFilter } from "../components/index.js"; 
 import { mockFetchSweets, mockPurchaseSweet } from "../utils/index.js";
-import { FaFilter, FaSearch, FaRedo } from 'react-icons/fa';
+import { FaRedo } from 'react-icons/fa'; 
 import { useSelector } from "react-redux";
 import { selectUser, selectIsAdmin } from "../store/authSlice.js";
 
@@ -12,13 +12,14 @@ function Dashboard(){
     const [sweets, setSweets] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [searchParams, setSearchParams] = useState({ query: '', category: '' });
     const [refreshTrigger, setRefreshTrigger] = useState(0); 
 
-    const fetchSweets = async () => {
+    const fetchSweets = useCallback(async () => {
         setLoading(true);
         setError(null);
         try {
-            const response = await mockFetchSweets();
+            const response = await mockFetchSweets(searchParams);9
             if (response.success) {
                 setSweets(response.data);
             } else {
@@ -29,7 +30,7 @@ function Dashboard(){
         } finally {
             setLoading(false);
         }
-    };
+    }, [searchParams, refreshTrigger]);
 
     const handlePurchase = async (sweetId) => {
         try {
@@ -42,9 +43,17 @@ function Dashboard(){
         }
     };
 
+    const handleSearch = ({ query, category }) => {
+        setSearchParams({ query, category });
+    };
+
+    const handleClearSearch = () => {
+        setSearchParams({ query: '', category: '' });
+    };
+
     useEffect(() => {
         fetchSweets();
-    }, [refreshTrigger]); 
+    }, [fetchSweets, refreshTrigger]);
 
     return(
         <div className="pt-24 min-h-[80vh] container mx-auto px-6 pb-12">
@@ -57,30 +66,15 @@ function Dashboard(){
                 </p>
             </header>
 
-            {/* Controls Section: Search/Filter/Add */}
-            <div className="bg-dark-primary/70 p-4 rounded-lg shadow-inner mb-8 flex justify-between items-center border border-light-blue/10">
-                <div className="flex space-x-3 items-center">
-                    <button className="bg-slate-gray text-white p-2 rounded-md hover:bg-slate-gray/80 flex items-center space-x-2">
-                        <FaSearch />
-                        <span>Search (TBD)</span>
-                    </button>
-                    <button className="bg-slate-gray text-white p-2 rounded-md hover:bg-slate-gray/80 flex items-center space-x-2">
-                        <FaFilter />
-                        <span>Filter (TBD)</span>
-                    </button>
-                </div>
-                <button 
-                    onClick={() => setRefreshTrigger(prev => prev + 1)}
-                    className="bg-red-500 text-white p-2 rounded-md hover:bg-red-600 flex items-center space-x-2"
-                    disabled={loading}
-                >
-                    <FaRedo className={loading ? 'animate-spin' : ''} />
-                    <span>Refresh</span>
-                </button>
-            </div>
+            {/* Replace old placeholder with the new component */}
+            <SearchAndFilter 
+                onSearch={handleSearch}
+                onClear={handleClearSearch}
+                loading={loading}
+            />
             
             {error && <p className="bg-red-900/50 text-red-300 p-3 rounded-lg text-center mb-4">{error}</p>}
-
+           
             {loading ? (
                 <div className="text-center text-light-blue text-2xl py-12">Loading sweets...</div>
             ) : sweets.length === 0 ? (
