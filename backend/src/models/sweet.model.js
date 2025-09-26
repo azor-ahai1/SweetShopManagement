@@ -19,12 +19,13 @@ const sweetSchema = new mongoose.Schema(
         },
 
         price: {
-            type: String,
+            type: Number,
             required: true,
         },
 
         stock: {
-            type: String,
+            type: Number,
+            default: 0,
         },
         
         image: {
