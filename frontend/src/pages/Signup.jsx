@@ -6,7 +6,7 @@ import { mockRegister } from "../utils/index.js";
 import { useDispatch } from "react-redux";
 import { login as authLogin } from "../store/authSlice.js";
 
-function Signup(){
+function Signup() {
     const { register, handleSubmit, formState: { errors } } = useForm();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -18,35 +18,36 @@ function Signup(){
         setLoading(true);
         try {
             const response = await mockRegister(data);
-            
             if (response.success) {
-                // Dispatch action to Redux store
                 dispatch(authLogin({ user: response.user, accessToken: response.accessToken }));
-                navigate('/dashboard'); // Navigate on successful registration/login
+                navigate('/dashboard');
             } else {
-                // Should not happen with mock, but for safety
                 setError("Registration failed. Please try again.");
             }
         } catch (err) {
-            setError(err.message || "An unexpected error occurred during registration.");
+            setError(err.message || "Unexpected error during registration.");
         } finally {
             setLoading(false);
         }
     };
 
-    const inputStyle = "w-full px-4 py-3 bg-dark-primary/70 border border-slate-gray/50 rounded-lg text-white placeholder-slate-gray focus:border-light-blue focus:ring-1 focus:ring-light-blue transition-colors";
-    const errorStyle = "text-red-400 text-sm mt-1";
+    const inputStyle = "w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-colors";
+    const errorStyle = "text-red-600 text-sm mt-1";
 
-    return(
-        <div className="pt-24 min-h-[80vh] flex items-center justify-center container mx-auto px-6">
-            <div className="w-full max-w-lg bg-dark-primary/90 p-8 md:p-12 rounded-xl shadow-2xl border border-light-blue/20">
-                <h1 className="text-3xl md:text-4xl font-extrabold text-center text-light-blue mb-2 flex items-center justify-center space-x-3">
-                    <FaUserPlus /> <span>SweetShop Register</span>
+    return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-12">
+            <div className="w-full max-w-md sm:max-w-lg bg-white p-8 sm:p-12 rounded-xl shadow-lg border border-gray-200">
+                
+                {/* Heading */}
+                <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-800 mb-2 flex items-center justify-center space-x-3">
+                    <FaUserPlus /> <span>Sign Up</span>
                 </h1>
-                <p className="text-center text-slate-gray mb-8">Create your new sweet account.</p>
+                <p className="text-center text-gray-500 mb-8">Create your sweet account</p>
 
-                {error && <p className="bg-red-900/50 text-red-300 p-3 rounded-lg text-center mb-4">{error}</p>}
+                {/* Error Message */}
+                {error && <p className="bg-red-100 text-red-700 p-3 rounded-lg text-center mb-4">{error}</p>}
 
+                {/* Form */}
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                     <div>
                         <input
@@ -66,10 +67,7 @@ function Signup(){
                             className={inputStyle}
                             {...register("email", { 
                                 required: "Email is required",
-                                pattern: {
-                                    value: /^\S+@\S+$/i,
-                                    message: "Invalid email address"
-                                }
+                                pattern: { value: /^\S+@\S+$/i, message: "Invalid email address" }
                             })}
                             disabled={loading}
                         />
@@ -83,10 +81,7 @@ function Signup(){
                             className={inputStyle}
                             {...register("password", { 
                                 required: "Password is required", 
-                                minLength: {
-                                    value: 6,
-                                    message: "Password must be at least 6 characters"
-                                }
+                                minLength: { value: 6, message: "Password must be at least 6 characters" }
                             })}
                             disabled={loading}
                         />
@@ -96,15 +91,16 @@ function Signup(){
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full bg-light-blue text-dark-primary py-3 rounded-lg font-semibold text-lg hover:bg-opacity-90 transition-all disabled:bg-slate-gray disabled:cursor-not-allowed"
+                        className="w-full bg-blue-400 text-white py-3 rounded-lg font-semibold text-lg hover:bg-blue-500 transition-all disabled:bg-gray-300 disabled:cursor-not-allowed"
                     >
                         {loading ? 'Processing...' : 'Register Account'}
                     </button>
                 </form>
 
-                <p className="mt-8 text-center text-slate-gray">
+                {/* Login Link */}
+                <p className="mt-8 text-center text-gray-500">
                     Already have an account? 
-                    <Link to="/login" className="text-light-blue hover:underline ml-2 font-medium">
+                    <Link to="/login" className="text-blue-400 hover:underline ml-2 font-medium">
                         Log In
                     </Link>
                 </p>
