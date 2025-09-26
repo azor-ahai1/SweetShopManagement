@@ -31,8 +31,11 @@ app.use(cookieParser())
 // ----------------------------------------------------------------------------------
 
 import userRouter from "./routes/user.route.js";
+import sweetRouter from "./routes/sweet.route.js";
+
 
 app.use("/api/v1/users", userRouter);
+app.use("/api/v1/sweets", sweetRouter);
 
 app.get('/', (req, res) => {
     res.status(200).json(new ApiResponse(200, null, 'Welcome to Sweet Shop API'));
