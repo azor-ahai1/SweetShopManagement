@@ -39,6 +39,23 @@ const registerUser = asyncHandler(async (req, res) => {
 
 }) 
 
+const loginUser = asyncHandler(async (req, res) => {
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            {
+            user: {
+                _id: "123",
+                name: "John",
+                email: "john@example.com"
+            }
+            },
+            "User logged in successfully"
+        )
+    );
+});
+
+
 const generateAccessAndRefreshTokens = async(userId) => {
     try{
         const user = await User.findById(userId);
@@ -110,4 +127,4 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 
 
 
-export {registerUser};
+export {registerUser, loginUser};
