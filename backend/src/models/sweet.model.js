@@ -1,4 +1,4 @@
-import mongoose, { Schema } from "mongoose";
+import mongoose from "mongoose";
 
 const sweetSchema = new mongoose.Schema(
     {
@@ -15,7 +15,6 @@ const sweetSchema = new mongoose.Schema(
         category: {
             type: String,
             required: true,
-            unique: true,
         },
 
         price: {

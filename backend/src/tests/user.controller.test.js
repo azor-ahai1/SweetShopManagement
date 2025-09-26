@@ -18,12 +18,20 @@ jest.unstable_mockModule("../models/user.model.js", () => ({
 }));
 
 // Mock mongoose
-jest.unstable_mockModule('mongoose', () => ({
-  default: {
-    connect: jest.fn().mockResolvedValue({}),
-    connection: { host: 'test-host' },
-  }
-}));
+jest.unstable_mockModule('mongoose', () => {
+    const mongoose = {
+        connect: jest.fn().mockResolvedValue({}),
+        connection: { host: 'test-host' },
+        Schema: class MockSchema { 
+            constructor() {} 
+        },
+        model: jest.fn(name => ({})),
+    };
+    return {
+        default: mongoose,
+        ...mongoose
+    };
+});
 
 // Import app after mocks
 const { app } = await import("../app.js");
