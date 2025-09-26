@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { SweetCard, SearchAndFilter } from "../components/index.js"; 
-import { mockFetchSweets, mockPurchaseSweet } from "../utils/index.js";
-import { FaRedo } from 'react-icons/fa'; 
+import { mockFetchSweets, mockPurchaseSweet, mockDeleteSweet } from "../utils/index.js";
+import { FaPlus } from 'react-icons/fa'; 
 import { useSelector } from "react-redux";
 import { selectUser, selectIsAdmin } from "../store/authSlice.js";
 
@@ -14,6 +14,12 @@ function Dashboard(){
     const [error, setError] = useState(null);
     const [searchParams, setSearchParams] = useState({ query: '', category: '' });
     const [refreshTrigger, setRefreshTrigger] = useState(0); 
+
+    // Admin state for modal management
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [modalMode, setModalMode] = useState('add'); // 'add' or 'edit'
+    const [currentSweet, setCurrentSweet] = useState(null);
+
 
     const fetchSweets = useCallback(async () => {
         setLoading(true);
@@ -51,6 +57,41 @@ function Dashboard(){
         setSearchParams({ query: '', category: '' });
     };
 
+    // ADMIN HANDLERS
+    const handleAddClick = () => {
+        setModalMode('add');
+        setCurrentSweet(null);
+        setIsModalOpen(true);
+    };
+
+    const handleEditClick = (sweet) => {
+        setModalMode('edit');
+        setCurrentSweet(sweet);
+        setIsModalOpen(true);
+    };
+    
+    const handleDeleteClick = async (sweetId) => {
+        if (!window.confirm("Are you sure you want to delete this sweet?")) return;
+        try {
+            await mockDeleteSweet(sweetId);
+            alert("Sweet deleted successfully (Mock).");
+            setRefreshTrigger(prev => prev + 1); 
+        } catch (err) {
+            alert(`Deletion Failed: ${err.message}`);
+            setError(err.message);
+        }
+    };
+    
+    const handleFormSuccess = (updatedSweet) => {
+        alert(`${modalMode === 'add' ? 'Added' : 'Updated'} sweet successfully!`);
+        setIsModalOpen(false);
+        setRefreshTrigger(prev => prev + 1); // Refresh list
+    };
+    
+    const handleFormError = (message) => {
+        setError(message);
+    };
+
     useEffect(() => {
         fetchSweets();
     }, [fetchSweets, refreshTrigger]);
@@ -65,6 +106,18 @@ function Dashboard(){
                     Welcome, {user?.name || 'Sweet Tooth'}! Available delights:
                 </p>
             </header>
+
+            <div className="mb-4 flex justify-end">
+                {isAdmin && (
+                    <button 
+                        onClick={handleAddClick}
+                        className="bg-green-600 text-white p-3 rounded-lg font-semibold hover:bg-green-700 transition-colors flex items-center space-x-2"
+                    >
+                        <FaPlus />
+                        <span>Add New Sweet</span>
+                    </button>
+                )}
+            </div>
 
             {/* Replace old placeholder with the new component */}
             <SearchAndFilter 
@@ -87,10 +140,26 @@ function Dashboard(){
                             sweet={sweet} 
                             onPurchase={handlePurchase}
                             isAdmin={isAdmin}
+                            onEdit={handleEditClick}      
+                            onDelete={handleDeleteClick}
                         />
                     ))}
                 </div>
             )}
+
+            {/* Admin Modal */}
+            <Modal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                title={modalMode === 'add' ? 'Add New Sweet' : `Edit ${currentSweet?.name || 'Sweet'}`}
+            >
+                <SweetForm
+                    mode={modalMode}
+                    sweet={currentSweet}
+                    onSuccess={handleFormSuccess}
+                    onError={handleFormError}
+                />
+            </Modal>
         </div>
     );
 }

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { FaShoppingCart, FaCheck, FaExclamationTriangle } from 'react-icons/fa';
 
 
-const SweetCard = ({ sweet, onPurchase, isAdmin = false }) => {
+const SweetCard = ({ sweet, onPurchase, isAdmin = false, onEdit, onDelete }) => {
     const { _id, name, category, price, quantity } = sweet;
     const isInStock = quantity > 0;
     const [isPurchasing, setIsPurchasing] = useState(false);
@@ -53,11 +53,21 @@ const SweetCard = ({ sweet, onPurchase, isAdmin = false }) => {
                 )}
             </button>
             
-            {/* Admin Controls Placeholder */}
+            {/* Admin Controls */}
             {isAdmin && (
-                <div className="mt-4 pt-4 border-t border-slate-gray/30 flex justify-between space-x-2">
-                    <button className="flex-1 py-2 text-sm text-white bg-yellow-600 rounded-lg hover:bg-yellow-700">Edit</button>
-                    <button className="flex-1 py-2 text-sm text-white bg-red-600 rounded-lg hover:bg-red-700">Delete</button>
+                <div className="mt-4 pt-4 border-t border-slate-gray/30 flex justify-end space-x-2">
+                    <button 
+                        onClick={() => onEdit(sweet)} 
+                        className="py-2 px-3 text-sm text-white bg-yellow-600 rounded-lg hover:bg-yellow-700 transition-colors flex items-center space-x-1"
+                    >
+                        <FaEdit /> <span>Edit</span>
+                    </button>
+                    <button 
+                        onClick={() => onDelete(sweet._id)} 
+                        className="py-2 px-3 text-sm text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors flex items-center space-x-1"
+                    >
+                        <FaTimes /> <span>Delete</span>
+                    </button>
                 </div>
             )}
         </div>
