@@ -5,6 +5,7 @@ import { FaSignInAlt } from 'react-icons/fa';
 import { mockLogin } from "../utils/index.js";
 import { useDispatch } from "react-redux";
 import { login as authLogin } from "../store/authSlice.js";
+import axios from '../axios.js'
 
 function Login() {
     const { register, handleSubmit, formState: { errors } } = useForm();
@@ -17,9 +18,10 @@ function Login() {
         setError(null);
         setLoading(true);
         try {
-            const response = await mockLogin(data);
-            if (response.success) {
-                dispatch(authLogin({ user: response.user, accessToken: response.accessToken }));
+            const response = await axios.post('/users/login', data);
+            if (response?.data?.success) {
+                const { user, accessToken, refreshToken } = response.data.data;
+                dispatch(authLogin({ user, accessToken, refreshToken }));
                 navigate('/dashboard');
             } else {
                 setError("Login failed. Please check your credentials.");

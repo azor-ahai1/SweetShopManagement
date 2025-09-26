@@ -5,6 +5,7 @@ import { FaUserPlus } from 'react-icons/fa';
 import { mockRegister } from "../utils/index.js";
 import { useDispatch } from "react-redux";
 import { login as authLogin } from "../store/authSlice.js";
+import axios from '../axios.js'
 
 function Signup() {
     const { register, handleSubmit, formState: { errors } } = useForm();
@@ -17,9 +18,10 @@ function Signup() {
         setError(null);
         setLoading(true);
         try {
-            const response = await mockRegister(data);
-            if (response.success) {
-                dispatch(authLogin({ user: response.user, accessToken: response.accessToken }));
+            const response = await axios.post('/users/register', data);
+            if (response?.data?.success) {
+                const { user, accessToken, refreshToken } = response.data.data;
+                dispatch(authLogin({ user:createdUser, accessToken, refreshToken }));
                 navigate('/dashboard');
             } else {
                 setError("Registration failed. Please try again.");

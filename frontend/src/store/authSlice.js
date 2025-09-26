@@ -13,7 +13,7 @@ const authSlice = createSlice({
       state.user = action.payload.user;
       state.userAuth = true;
       state.token = action.payload.accessToken;
-      state.isAdmin = action.payload.user?.role === 'admin'; 
+      state.isAdmin = action.payload.user?.isAdmin === true; 
       
       localStorage.setItem('user', JSON.stringify(action.payload.user));
       localStorage.setItem('token', action.payload.accessToken);

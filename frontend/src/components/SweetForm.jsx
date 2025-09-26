@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { FaPlus, FaSave } from 'react-icons/fa';
 import { mockAddSweet, mockUpdateSweet } from '../utils/index.js';
 
-const CATEGORIES = ['Chocolate', 'Hard Candy', 'Gummy', 'Jelly Beans', 'Lollipops'];
+const CATEGORIES = [ "Milk Based", "Flour Based", "Syrup Soaked", "Puddings", "Sugar Confectionery", "Chocolate Based", "Bakery Based", "Ice Cream", "Fruit Based", "Others"];
 
 const SweetForm = ({ mode, sweet, onSuccess, onError }) => {
   const isEdit = mode === 'edit';

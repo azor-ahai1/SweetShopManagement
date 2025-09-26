@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-import connectDB from "./db/index.js";
+import connectDB from "./services/mongodb.js";
 import { app } from "./app.js";
 
 // --------------------------------

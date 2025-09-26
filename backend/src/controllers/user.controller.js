@@ -29,20 +29,29 @@ const registerUser = asyncHandler(async (req, res) => {
     const createdUser = await User.findById(user._id).select(
         "-passowrd -refreshToken"
     )
-
+    
     if (!createdUser){
         throw new ApiError(404, "Something went wrong while registering the user.");
     }
 
+    const {accessToken, refreshToken} = await generateAccessAndRefreshTokens(createdUser._id);
+    
+    if(!accessToken){
+        throw new ApiError(500, "Failed to generate access token");
+    }
+    if(!refreshToken){
+        throw new ApiError(500, "Failed to generate refresh token");
+    }
+
     return res.status(201).json(
-        new ApiResponse(200, createdUser, "User Registered Successfully")
+        new ApiResponse(200, {user: createdUser, accessToken, refreshToken}, "User Registered Successfully")
     )
 
 }) 
 
 const loginUser = asyncHandler(async (req, res) => {
 
-    const { email, password  } = req.body;
+    const { email, password } = req.body;
 
     if(!email){
         throw new ApiError(400, "Username or Email is required");
@@ -51,7 +60,7 @@ const loginUser = asyncHandler(async (req, res) => {
     if(!password){
         throw new ApiError(400, "Password is required");
     }
-    console.log(email);
+    // console.log(email);
     const user = await User.findOne({email: email.toLowerCase()})
 
     if(!user){
