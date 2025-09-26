@@ -4,11 +4,13 @@ import request from "supertest";
 // --- Mock Setup ---
 const mockCreate = jest.fn();
 const mockFindById = jest.fn();
+const mockFind = jest.fn();
 
 jest.unstable_mockModule("../models/sweet.model.js", () => ({
     Sweet: {
         create: mockCreate,
-        findById: mockFindById
+        findById: mockFindById,
+        find: mockFind
     }
 }));
 
@@ -28,11 +30,9 @@ jest.unstable_mockModule('mongoose', () => {
     return { default: mongoose, ...mongoose };
 });
 
-
-
 const createMockApp = async () => {
     const express = (await import('express')).default;
-    const { createSweet } = await import('../controllers/sweet.controller.js');
+    const { createSweet, getAllSweets } = await import('../controllers/sweet.controller.js');
     const app = express();
     
     app.use(express.json());
@@ -69,10 +69,18 @@ const createMockApp = async () => {
         });
     });
 
-    // Apply middleware and route
+    // Apply middleware and routes
     app.post('/api/v1/sweets/create', mockMulter, async (req, res, next) => {
         try {
             await createSweet(req, res, next);
+        } catch (error) {
+            next(error);
+        }
+    });
+
+    app.get('/api/v1/sweets', async (req, res, next) => {
+        try {
+            await getAllSweets(req, res, next);
         } catch (error) {
             next(error);
         }
@@ -90,6 +98,47 @@ beforeAll(async () => {
 describe("Sweet Controller Tests", () => {
     beforeEach(() => {
         jest.clearAllMocks();
+    });
+
+    it("should get all sweets successfully", async () => {
+        const mockSweets = [
+            {
+                _id: "sweet1",
+                name: "Gulab Jamun",
+                description: "Soft, milk-solid-based sweets",
+                category: { _id: "cat1", name: "Milk Sweets" },
+                price: 5.50,
+                stock: 100,
+                image: "gulab-jamun.jpg"
+            },
+            {
+                _id: "sweet2", 
+                name: "Rasgulla",
+                description: "Spongy milk sweets",
+                category: { _id: "cat1", name: "Milk Sweets" },
+                price: 4.00,
+                stock: 50,
+                image: "rasgulla.jpg"
+            }
+        ];
+
+        // Mock the populate method chain
+        const mockPopulate = jest.fn().mockResolvedValue(mockSweets);
+        mockFind.mockReturnValue({
+            populate: mockPopulate
+        });
+
+        const res = await request(app).get("/api/v1/sweets");
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.success).toBe(true);
+        expect(res.body.message).toBe("Sweets Retrieved Successfully");
+        expect(res.body.data).toEqual(mockSweets);
+        expect(res.body.data).toHaveLength(2);
+        
+        // Verify mocks were called correctly
+        expect(mockFind).toHaveBeenCalledWith();
+        expect(mockPopulate).toHaveBeenCalledWith('category', 'name');
     });
 
     it("should create a sweet successfully with image upload", async () => {
@@ -133,10 +182,10 @@ describe("Sweet Controller Tests", () => {
             .field('stock', mockSweetData.stock.toString())
             .attach('image', Buffer.from('mock image data'), 'test.jpg');
 
-
-
         // Debug: Log what actually happened
         if (res.statusCode !== 201) {
+            console.log('Response status:', res.statusCode);
+            console.log('Response body:', res.body);
             return;
         }
 
@@ -162,6 +211,4 @@ describe("Sweet Controller Tests", () => {
             createdBy: 'mockUserId123'
         }));
     });
-
-
 });

@@ -56,4 +56,11 @@ const createSweet = asyncHandler(async (req, res) => {
     );
 });
 
-export { createSweet };
+const getAllSweets = asyncHandler(async (req, res) => {
+    const sweets = await Sweet.find().populate('category', 'name');
+    return res.status(200).json(
+        new ApiResponse(200, sweets, "Sweets Retrieved Successfully")
+    );
+});
+
+export { createSweet, getAllSweets };
