@@ -2,32 +2,51 @@ import React, { useState } from 'react';
 import { FaShoppingCart, FaExclamationTriangle, FaEdit, FaTimes } from 'react-icons/fa';
 
 const SweetCard = ({ sweet, onPurchase, isAdmin = false, onEdit, onDelete }) => {
-  const { _id, name, category, price, quantity } = sweet;
-  const isInStock = quantity > 0;
+  const { _id, name, description, category, price, stock, image } = sweet;
+  const isInStock = stock > 0;
   const [isPurchasing, setIsPurchasing] = useState(false);
 
   const handlePurchase = async () => {
     setIsPurchasing(true);
     try {
       await onPurchase(_id);
-    } catch (error) {}
-    finally {
+    } catch (error) {
+      // handle error if needed
+      console.log(error);
+    } finally {
       setIsPurchasing(false);
     }
   };
 
   return (
-    <div className="bg-white shadow-md rounded-xl p-6 border border-gray-200 hover:shadow-xl transform hover:scale-105 transition-all duration-300">
+    <div className="bg-white shadow-md rounded-xl p-6 border border-gray-200 hover:shadow-xl transform hover:scale-105 transition-all duration-300 flex flex-col">
       
-      {/* Sweet Name & Category */}
-      <h3 className="text-xl md:text-2xl font-bold text-gray-800 mb-1">{name}</h3>
-      <p className="text-sm md:text-base text-gray-500 mb-4">Category: {category}</p>
-      
+      {/* Sweet Image */}
+      {image && (
+        <img 
+          src={image} 
+          alt={name} 
+          className="w-full h-48 object-cover rounded-md mb-4"
+          loading="lazy"
+        />
+      )}
+
+      {/* Sweet Name */}
+      <h3 className="text-2xl font-bold text-gray-800 mb-1">{name}</h3>
+
+      {/* Category */}
+      <p className="text-sm text-gray-500 mb-2"><strong>Category:</strong> {category}</p>
+
+      {/* Description */}
+      <p className="text-gray-600 mb-4 flex-grow">{description}</p>
+
       {/* Price & Stock */}
-      <div className="flex flex-col sm:flex-row sm:justify-between items-start sm:items-center mb-4 border-t border-b border-gray-200 py-3">
-        <span className="text-2xl md:text-3xl font-extrabold text-gray-900">${price.toFixed(2)}</span>
-        <span className={`text-sm md:text-base font-semibold mt-2 sm:mt-0 px-3 py-1 rounded-full ${isInStock ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-          {quantity} in stock
+      <div className="flex justify-between items-center mb-4 border-t border-b border-gray-200 py-3">
+        <span className="text-3xl font-extrabold text-gray-900">${price.toFixed(2)}</span>
+        <span className={`text-sm font-semibold px-3 py-1 rounded-full ${
+          isInStock ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+        }`}>
+          {stock} in stock
         </span>
       </div>
 

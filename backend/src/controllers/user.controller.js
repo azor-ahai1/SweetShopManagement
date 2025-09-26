@@ -3,6 +3,7 @@ import {ApiError} from "../utils/ApiError.js"
 import { User } from "../models/user.model.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { Purchase } from "../models/purchase.model.js";
+import jwt from "jsonwebtoken";
 
 const registerUser = asyncHandler(async (req, res) => {
     const {name, email, password} = req.body
@@ -26,14 +27,7 @@ const registerUser = asyncHandler(async (req, res) => {
         password
     })
 
-    const createdUser = await User.findById(user._id).select(
-        "-passowrd -refreshToken"
-    )
-    
-    if (!createdUser){
-        throw new ApiError(404, "Something went wrong while registering the user.");
-    }
-
+    const createdUser = await User.findById(user._id).select("-password -refreshToken")
     const {accessToken, refreshToken} = await generateAccessAndRefreshTokens(createdUser._id);
     
     if(!accessToken){
@@ -169,7 +163,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     try {
         const decodedToken = jwt.verify(
             incomingRefreshToken,
-            process.env.process.env.REFRESH_TOKEN_SECRET
+            process.env.REFRESH_TOKEN_SECRET
         )
     
         const user = await User.findById(decodedToken?._id)
@@ -187,18 +181,18 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
             secure: true
         }
     
-        const {accessToken, newrefreshToken} = await generateAccessAndRefreshTokens(user._id)
+        const {accessToken, refreshToken: newRefreshToken} = await generateAccessAndRefreshTokens(user._id)
     
         return res
         .status(200)
         .cookie("accessToken", accessToken, options)
-        .cookie("refreshToken", newrefreshToken, options)
+        .cookie("refreshToken", newRefreshToken, options)
         .json(
             new ApiResponse(
                 200,
                 {
                     accessToken,
-                    refreshToken: newrefreshToken
+                    refreshToken: newRefreshToken
                 },
                 "Refresh token generated successfully",
             )

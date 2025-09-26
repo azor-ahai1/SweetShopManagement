@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { SweetCard, SearchAndFilter, Modal, SweetForm, RestockForm } from "../components/index.js"; 
-import { mockFetchSweets, mockPurchaseSweet, mockDeleteSweet } from "../utils/index.js";
 import { FaPlus, FaBoxes } from 'react-icons/fa'; 
 import { useSelector } from "react-redux";
 import { selectUser, selectIsAdmin } from "../store/authSlice.js";
+import axios from '../axios.js';
 
 function Sweets() {
     const user = useSelector(selectUser);
@@ -24,11 +24,22 @@ function Sweets() {
         setLoading(true);
         setError(null);
         try {
-            const response = await mockFetchSweets(searchParams);
-            if (response.success) {
-                setSweets(response.data);
+            let url = '/sweets';
+            
+            // Add search parameters if they exist
+            const queryParams = new URLSearchParams();
+            if (searchParams.query) queryParams.append('name', searchParams.query);
+            if (searchParams.category) queryParams.append('category', searchParams.category);
+            
+            if (queryParams.toString()) {
+                url = `/sweets/search?${queryParams.toString()}`;
+            }
+
+            const response = await axios.get(url);
+            if (response.data.success) {
+                setSweets(response.data.data);
             } else {
-                setError(response.message || "Failed to fetch sweets.");
+                setError(response.data.message || "Failed to fetch sweets.");
             }
         } catch (err) {
             setError(err.message || "Network error while fetching sweets.");
@@ -41,14 +52,21 @@ function Sweets() {
         fetchSweets();
     }, [fetchSweets]);
 
-    const handlePurchase = async (sweetId) => {
+    const handlePurchase = async (sweetId, quantity = 1) => {
         try {
-            await mockPurchaseSweet(sweetId);
-            alert("Purchase successful! Stock updated on next refresh (mock).");
+            const sweetItem = sweets.find(s => s._id === sweetId);
+            const purchaseData = {
+                quantity,
+                price: sweetItem?.price || 0
+            };
+            
+            await axios.post(`/sweets/${sweetId}/purchase`, purchaseData);
+            alert("Purchase successful!!");
             setRefreshTrigger(prev => prev + 1);
         } catch (err) {
-            alert(`Purchase Failed: ${err.message}`);
-            setError(err.message);
+            const errorMsg = err.response?.data?.message || err.message;
+            alert(`Purchase Failed: ${errorMsg}`);
+            setError(errorMsg);
         }
     };
 
@@ -61,18 +79,27 @@ function Sweets() {
     const handleDeleteClick = async (sweetId) => {
         if (!window.confirm("Are you sure you want to delete this sweet?")) return;
         try {
-            await mockDeleteSweet(sweetId);
-            alert("Sweet deleted successfully (mock).");
+            await axios.delete(`/sweets/${sweetId}`);
+            alert("Sweet deleted successfully.");
             setRefreshTrigger(prev => prev + 1);
         } catch (err) {
-            alert(`Deletion Failed: ${err.message}`);
-            setError(err.message);
+            const errorMsg = err.response?.data?.message || err.message;
+            alert(`Deletion Failed: ${errorMsg}`);
+            setError(errorMsg);
         }
     };
-    const handleFormSuccess = (updatedSweet) => { alert(`${modalMode==='add'?'Added':'Updated'} sweet successfully!`); setIsModalOpen(false); setRefreshTrigger(prev => prev + 1); };
+    const handleFormSuccess = (updatedSweet) => { 
+        alert(`${modalMode==='add'?'Added':'Updated'} sweet successfully!`); 
+        setIsModalOpen(false); 
+        setRefreshTrigger(prev => prev + 1); 
+    };
     const handleFormError = (message) => setError(message);
     const handleRestockClick = () => setIsRestockModalOpen(true);
-    const handleRestockSuccess = (updatedSweet) => { alert(`Restock successful! New quantity: ${updatedSweet.quantity}`); setIsRestockModalOpen(false); setRefreshTrigger(prev => prev + 1); };
+    const handleRestockSuccess = (updatedSweet) => { 
+        alert(`Restock successful! New quantity: ${updatedSweet.stock}`); 
+        setIsRestockModalOpen(false); 
+        setRefreshTrigger(prev => prev + 1); 
+    };
 
     return (
         <div className="pt-24 min-h-[80vh] container mx-auto px-4 sm:px-6 lg:px-8 pb-12 bg-gray-50">
@@ -113,7 +140,14 @@ function Sweets() {
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
                     {sweets.map(sweet => (
-                        <SweetCard key={sweet._id} sweet={sweet} onPurchase={handlePurchase} isAdmin={isAdmin} onEdit={handleEditClick} onDelete={handleDeleteClick} />
+                        <SweetCard 
+                            key={sweet._id} 
+                            sweet={sweet} 
+                            onPurchase={handlePurchase} 
+                            isAdmin={isAdmin} 
+                            onEdit={handleEditClick} 
+                            onDelete={handleDeleteClick} 
+                        />
                     ))}
                 </div>
             )}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { PurchaseCard } from "../components/index.js";
-import { mockFetchUserPurchases } from "../utils/index.js";
+import axios from '../axios.js';
 import { FaUser, FaHistory, FaEnvelope, FaCalendarAlt, FaWallet, FaBoxOpen } from "react-icons/fa";
 import { useSelector } from "react-redux";
 import { selectUser, selectIsAdmin } from "../store/authSlice.js";
@@ -17,11 +17,12 @@ function Dashboard(){
         setLoading(true);
         setError(null);
         try {
-            const response = await mockFetchUserPurchases(user?.id);
-            if (response?.success) setPurchases(response.data || []);
-            else setError(response?.message || "Failed to fetch purchase history.");
+            // Fixed: Changed from '/api/v1/users/purchase-history' to '/users/purchase-history'
+            const response = await axios.get('/users/purchase-history');
+            if (response?.data?.success) setPurchases(response.data.data.purchases || []);
+            else setError(response?.data?.message || "Failed to fetch purchase history.");
         } catch (err) {
-            setError(err?.message || "Network error while fetching purchase history.");
+            setError(err?.response?.data?.message || err?.message || "Network error while fetching purchase history.");
         } finally {
             setLoading(false);
         }
@@ -38,7 +39,7 @@ function Dashboard(){
 
     const stats = useMemo(() => {
         const total = purchases.length;
-        const spent = purchases.reduce((s, p) => s + (Number(p.total) || 0), 0);
+        const spent = purchases.reduce((s, p) => s + (Number(p.price) || 0), 0);
         const last = purchases.slice().sort((a,b)=> new Date(b.createdAt) - new Date(a.createdAt))[0];
         return { total, spent, lastDate: last?.createdAt };
     }, [purchases]);
@@ -68,7 +69,7 @@ function Dashboard(){
                                 <div className="mt-4 grid grid-cols-2 gap-3">
                                     <div className="bg-gray-50 border rounded-lg p-3 text-center">
                                         <p className="text-xs text-gray-500">Member Since</p>
-                                        <p className="font-medium">{user?.joinDate ? formatDate(user.joinDate) : "N/A"}</p>
+                                        <p className="font-medium">{user?.createdAt ? formatDate(user.createdAt) : "N/A"}</p>
                                     </div>
                                     <div className="bg-gray-50 border rounded-lg p-3 text-center">
                                         <p className="text-xs text-gray-500">Status</p>

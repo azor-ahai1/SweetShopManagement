@@ -17,6 +17,7 @@ const createSweet = asyncHandler(async (req, res) => {
 
     const { name, description, category, price, stock } = req.body;
     
+    // console.log(name, description, category, price, stock);
     
     if ([name, description, category].some((field) => field?.trim() === "")) {
         throw new ApiError(400, "Name, description, and category are required");
@@ -40,6 +41,8 @@ const createSweet = asyncHandler(async (req, res) => {
         }
         imageUrl = uploadedImage.url;
     }
+
+    // console.log(req.file?.path)
 
     const sweet = await Sweet.create({
         name,
@@ -71,61 +74,83 @@ const getAllSweets = asyncHandler(async (req, res) => {
 
 
 const buySweet = asyncHandler(async (req, res) => {
-    const { buyer, sweet, quantity, comment, price } = req.body;
+    const { quantity, comment, price } = req.body;
+    const buyer = req.user._id;
+    const sweet = req.params.sweet;
+
+    const sweetItem = await Sweet.findById(sweet);
+    if (!sweetItem) {
+        throw new ApiError(404, "Sweet not found.");
+    }
+
+    if (sweetItem.stock < quantity) {
+        throw new ApiError(400, "Insufficient stock available.");
+    }
+
     const order = await Purchase.create({
-        buyer, sweet, quantity, comment, price, orderDate: new Date(),
-    })
+        buyer, 
+        sweet, 
+        quantity, 
+        comment, 
+        price: price || sweetItem.price, 
+        orderDate: new Date(),
+    });
 
     const sweetPurchase = await Purchase.findById(order._id)
-    .populate('sweet', 'name')
+        .populate('sweet', 'name');
 
-    if (!sweetPurchase){
+    if (!sweetPurchase) {
         throw new ApiError(404, "Something went wrong while purchasing sweet.");
     }
 
     const updatedSweet = await Sweet.findByIdAndUpdate(
         sweet,
-        {stock:stock-quantity},
+        { stock: sweetItem.stock - quantity },
         { new: true }
-    )
+    );
 
-    if (!updatedSweet){
-        throw new ApiError(404, "Something went wrong while purchasing sweet.");
+    if (!updatedSweet) {
+        throw new ApiError(404, "Something went wrong while updating stock.");
     }
 
     return res.status(201).json(
         new ApiResponse(200, sweetPurchase, "Sweet Purchased Successfully")
-    )
+    );
 });
 
 
 const addStock = asyncHandler(async (req, res) => {
-    const { sweet, quantity } = req.body;
+    const { quantity } = req.body;
+    const sweet = req.params.sweet;
     const userId = req.user._id;
+    // console.log(sweet, quantity);
 
-    const user = await User.findById(userId)
-    if(!user || !user.isAdmin){
+    const user = await User.findById(userId);
+    if (!user || !user.isAdmin) {
         throw new ApiError(403, "You are not authorised to add stock.");
     }
 
-    const updatedSweet = await Sweet.findByIdAndUpdate(
-        sweet,
-        {stock:stock+quantity},
-        { new: true }
-    )
-
-    if (!updatedSweet){
-        throw new ApiError(401, "Something went wrong while purchasing sweet.");
+    if (!quantity || quantity <= 0) {
+        throw new ApiError(400, "Quantity must be a positive number.");
     }
 
-    return res.status(201).json(
-        new ApiResponse(201, updatedSweet, "Sweet Purchased Successfully")
-    )
+    const sweetItem = await Sweet.findById(sweet);
+    if (!sweetItem) {
+        throw new ApiError(404, "Sweet not found.");
+    }
+
+    sweetItem.stock += quantity;
+    await sweetItem.save();
+
+    return res.status(200).json(
+        new ApiResponse(200, sweetItem, "Sweet stock updated successfully")
+    );
 });
 
 
+
 const deleteSweet = asyncHandler(async (req, res) => {
-    const { sweetId } = req.params;
+    const { sweetId } = req.params.sweet;
     const userId = req.user._id;
 
     const user = await User.findById(userId)
@@ -136,79 +161,60 @@ const deleteSweet = asyncHandler(async (req, res) => {
     try{
         await Sweet.findByIdAndDelete(sweetId);
         return res.status(201).json(
-            new ApiResponse(201, updatedSweet, "Sweet Deleted Successfully")
+            new ApiResponse(201, {}, "Sweet Deleted Successfully")
         )
 
     } catch (error) {
-        if (!updatedSweet){
-            throw new ApiError(500, "Something went wrong while deleting sweet.");
-        }
+        throw new ApiError(500, "Something went wrong while deleting sweet.");
     }
-
-
-
 }); 
 
 
 const updateSweet = asyncHandler(async (req, res) => {
-    const { name, price, description, category, quantity, image } = req.body;
+  const { name, price, description, category, stock } = req.body; 
+  const sweetId = req.params.sweet;
 
-    const sweetId = req.params.sweetId;
+  const sweet = await Sweet.findById(sweetId);
+  if (!sweet) {
+    throw new ApiError(404, "Sweet not found");
+  }
 
-    const sweet = await Sweet.findById(sweetId);
-    if (!sweet) {
-        throw new ApiError(404, "Sweet not found");
+  if ([name, description].some(field => field?.trim() === "")) {
+    throw new ApiError(400, "All fields are required");
+  }
+
+  if (price <= 0 || stock < 0) {
+    throw new ApiError(400, "Price must be > 0 and stock cannot be negative");
+  }
+  let sweetImageURL = sweet.image; 
+  if (req.file) {
+    const uploadedImage = await uploadImageOnCloudinary(req.file.path);
+    if (!uploadedImage) {
+      throw new ApiError(400, "Image Upload Failed");
     }
+    sweetImageURL = uploadedImage.url;
+  }
 
-    if([name, description].some(
-        (field) => field?.trim() === "" )
-    ){
-        throw new ApiError(400, "All fields are required");
-    }
+  const updatedSweet = await Sweet.findByIdAndUpdate(
+    sweetId,
+    {
+      $set: {
+        name,
+        price,
+        description,
+        stock,
+        image: sweetImageURL,
+        category,
+      }
+    },
+    { new: true }
+  );
 
-    if ((price <= 0) || (quantity <= 0)) {
-        throw new ApiError(400, "Price and quantity must be greater than 0");
-    }
+  return res.status(200).json(
+    new ApiResponse(200, updatedSweet, "Sweet Updated Successfully")
+  );
+});
 
-    let uploadedImages = [];
-    try {
-        uploadedImages = JSON.parse(image || '[]');
-    } catch (parseError) {
-        throw new ApiError(400, "Invalid existing images format");
-    }
-
-    const sweetImagePath = req.files?.path;
-    
-    let sweetImageURL="";
-    if(sweetImagePath){
-        const sweetImage = await uploadProfileImageOnCloudinary(sweetImagePath);
-        if(!sweetImage){
-            throw new ApiError(400, "Image Upload Failed")
-        }
-        else{
-            sweetImageURL = sweetImage.url
-        }
-    }
-    
-    const updatedSweet = await Sweet.findByIdAndUpdate(
-        sweetId,
-        { 
-            $set:{
-                name,
-                price,
-                description,
-                stock,
-                image: sweetImageURL,
-                category: category,
-            } 
-        },
-        { new: true }
-    );
-
-    return res.status(201).json(
-        new ApiResponse(201, updatedSweet, "Sweet Updated Successfully")
-    )
-})
 
 
 const searchSweet = asyncHandler(async (req, res) => {
