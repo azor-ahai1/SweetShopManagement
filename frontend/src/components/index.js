@@ -5,7 +5,7 @@ import SweetCard from './SweetCard.jsx';
 import SearchAndFilter from './SearchAndFilter.jsx';
 import Modal from './Modal.jsx';
 import SweetForm from './SweetForm.jsx';
-
+import RestockForm from './RestockForm.jsx';
 
 
 
@@ -17,5 +17,7 @@ export {
     SweetCard,
     SweetForm,
     Modal,
-    SearchAndFilter
+    SearchAndFilter,
+    RestockForm
+    
 };

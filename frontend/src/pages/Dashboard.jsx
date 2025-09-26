@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { SweetCard, SearchAndFilter } from "../components/index.js"; 
-import { mockFetchSweets, mockPurchaseSweet, mockDeleteSweet } from "../utils/index.js";
-import { FaPlus } from 'react-icons/fa'; 
+import { mockFetchSweets, mockPurchaseSweet, mockDeleteSweet, mockRestockSweet } from "../utils/index.js";
+import { FaPlus, FaBoxes } from 'react-icons/fa'; 
 import { useSelector } from "react-redux";
 import { selectUser, selectIsAdmin } from "../store/authSlice.js";
 
@@ -9,6 +9,7 @@ function Dashboard(){
     const user = useSelector(selectUser);
     const isAdmin = useSelector(selectIsAdmin);
     
+    const [isRestockModalOpen, setIsRestockModalOpen] = useState(false);
     const [sweets, setSweets] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -92,6 +93,16 @@ function Dashboard(){
         setError(message);
     };
 
+    const handleRestockClick = () => {
+        setIsRestockModalOpen(true);
+    };
+    
+    const handleRestockSuccess = (updatedSweet) => {
+        alert(`Restock successful! New quantity for ${updatedSweet.name} is ${updatedSweet.quantity}.`);
+        setIsRestockModalOpen(false);
+        setRefreshTrigger(prev => prev + 1); // Refresh list
+    };
+
     useEffect(() => {
         fetchSweets();
     }, [fetchSweets, refreshTrigger]);
@@ -107,15 +118,24 @@ function Dashboard(){
                 </p>
             </header>
 
-            <div className="mb-4 flex justify-end">
+             <div className="mb-4 flex justify-end space-x-4"> {/* Added space-x-4 for button separation */}
                 {isAdmin && (
-                    <button 
-                        onClick={handleAddClick}
-                        className="bg-green-600 text-white p-3 rounded-lg font-semibold hover:bg-green-700 transition-colors flex items-center space-x-2"
-                    >
-                        <FaPlus />
-                        <span>Add New Sweet</span>
-                    </button>
+                    <>
+                        <button 
+                            onClick={handleRestockClick} // New Restock Button
+                            className="bg-yellow-600 text-white p-3 rounded-lg font-semibold hover:bg-yellow-700 transition-colors flex items-center space-x-2"
+                        >
+                            <FaBoxes />
+                            <span>Restock Inventory</span>
+                        </button>
+                        <button 
+                            onClick={handleAddClick}
+                            className="bg-green-600 text-white p-3 rounded-lg font-semibold hover:bg-green-700 transition-colors flex items-center space-x-2"
+                        >
+                            <FaPlus />
+                            <span>Add New Sweet</span>
+                        </button>
+                    </>
                 )}
             </div>
 
@@ -157,6 +177,16 @@ function Dashboard(){
                     mode={modalMode}
                     sweet={currentSweet}
                     onSuccess={handleFormSuccess}
+                    onError={handleFormError}
+                />
+            </Modal>
+            <Modal
+                isOpen={isRestockModalOpen}
+                onClose={() => setIsRestockModalOpen(false)}
+                title="Restock Sweet Inventory"
+            >
+                <RestockForm
+                    onSuccess={handleRestockSuccess}
                     onError={handleFormError}
                 />
             </Modal>
