@@ -1,9 +1,20 @@
 import { mockRegister, mockLogin } from './authService.js';
-import { mockFetchSweets, mockPurchaseSweet } from './sweetService.js'; 
+import { 
+    mockFetchSweets, 
+    mockPurchaseSweet,
+    mockAddSweet,       
+    mockUpdateSweet,    
+    mockDeleteSweet,    
+    mockRestockSweet,   
+} from './sweetService.js'; 
 
 export {
     mockRegister,
     mockLogin,
     mockFetchSweets, 
-    mockPurchaseSweet, 
+    mockPurchaseSweet,
+    mockAddSweet,       
+    mockUpdateSweet,    
+    mockDeleteSweet,    
+    mockRestockSweet,   
 };
