@@ -4,6 +4,15 @@ const mockSweetsData = [
     { _id: 's3', name: 'Gummy Bears', category: 'Gummy', price: 3.00, quantity: 5, description: 'Assorted fruit flavored gummy bears.' },
 ];
 
+const mockPurchaseHistory = [
+    {
+        "userId": "guest",
+        "sweetId": "s1",
+        "sweetName": "Chocolate Bar",
+        "date": "2025-09-26T14:55:22.000Z"
+    }
+];
+
 export const mockFetchSweets = (query = {}) => {
     console.log("Mock Fetch Sweets called with query:", query);
     
@@ -23,8 +32,8 @@ export const mockFetchSweets = (query = {}) => {
     });
 };
 
-export const mockPurchaseSweet = (sweetId) => {
-    console.log(`Mock Purchase Sweet called for ID: ${sweetId}`);
+export const mockPurchaseSweet = (sweetId, userId = 'guest') => {
+    console.log(`Mock Purchase Sweet called for ID: ${sweetId} by user: ${userId}`);
     
     return new Promise((resolve, reject) => {
         setTimeout(() => {
@@ -36,7 +45,17 @@ export const mockPurchaseSweet = (sweetId) => {
             if (sweet.quantity <= 0) {
                 return reject(new Error("Out of stock. (Mock)"));
             }
-            
+
+            sweet.quantity -= 1;
+
+            // Record the purchase
+            mockPurchaseHistory.push({
+                userId,
+                sweetId: sweet._id,
+                sweetName: sweet.name,
+                date: new Date().toISOString()
+            });
+
             resolve({
                 success: true,
                 message: `Successfully purchased 1 unit of ${sweet.name}.`,
@@ -44,6 +63,7 @@ export const mockPurchaseSweet = (sweetId) => {
         }, 500);
     });
 };
+
 
 let currentId = 4; // Start ID after initial mock data
 
@@ -108,5 +128,20 @@ export const mockRestockSweet = (id, amount) => {
             sweet.quantity += parseInt(amount);
             resolve({ success: true, data: sweet, message: `Restocked ${sweet.name} by ${amount} units (Mock)` });
         }, 400);
+    });
+};
+
+export const mockFetchUserPurchases = (userId = 'guest') => {
+    console.log(`Mock Fetch User Purchases called for user: ${userId}`);
+    
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            const purchases = mockPurchaseHistory.filter(p => p.userId === userId);
+            resolve({
+                success: true,
+                data: purchases,
+                message: "User purchases fetched successfully (Mock)",
+            });
+        }, 300);
     });
 };

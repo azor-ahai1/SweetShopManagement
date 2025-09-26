@@ -5,7 +5,8 @@ import {
     mockAddSweet,       
     mockUpdateSweet,    
     mockDeleteSweet,    
-    mockRestockSweet,   
+    mockRestockSweet,  
+    mockFetchUserPurchases 
 } from './sweetService.js'; 
 
 export {
@@ -17,4 +18,5 @@ export {
     mockUpdateSweet,    
     mockDeleteSweet,    
     mockRestockSweet,   
+    mockFetchUserPurchases
 };
