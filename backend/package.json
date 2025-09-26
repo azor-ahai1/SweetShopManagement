@@ -9,7 +9,6 @@
     "dev": "nodemon --experimental-json-modules src/index.js",
     "build": "npm install; echo 'No build needed'",
     "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js"
-
   },
   "repository": {
     "type": "git",
@@ -27,10 +26,12 @@
   "author": "Aashish Shukla",
   "license": "ISC",
   "dependencies": {
+    "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^17.2.2",
     "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.18.2",
     "nodemon": "^3.1.10",
     "prettier": "^3.6.2"
