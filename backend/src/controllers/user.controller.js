@@ -118,17 +118,27 @@ const getCurrentUser = asyncHandler(async (req, res) => {
 
 const getUserPurchaseHistory = asyncHandler(async (req, res) => {
     const userId = req.user._id;
-
+    
+    // Get purchases with proper population
     const purchases = await Purchase.find({ buyer: userId })
-        .populate("sweet")
+        .populate({
+            path: "sweet", 
+            select: "name category price image stock",
+            // Handle case where sweet might be deleted
+            options: { 
+                strictPopulate: false 
+            }
+        })
         .sort({ createdAt: -1 });
-
+   
     const totalPurchases = purchases.length;
-
+    const totalSpent = purchases.reduce((sum, purchase) => sum + (purchase.price * purchase.quantity), 0);
+   
     return res.status(200).json(
         new ApiResponse(200, {
             purchases,
-            totalPurchases
+            totalPurchases,
+            totalSpent
         }, "User purchase history retrieved successfully")
     );
 });

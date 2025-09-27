@@ -21,7 +21,7 @@ function Signup() {
             const response = await axios.post('/users/register', data);
             if (response?.data?.success) {
                 const { user, accessToken, refreshToken } = response.data.data;
-                dispatch(authLogin({ user:createdUser, accessToken, refreshToken }));
+                dispatch(authLogin({ user, accessToken, refreshToken }));
                 navigate('/dashboard');
             } else {
                 setError("Registration failed. Please try again.");

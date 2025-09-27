@@ -12,7 +12,12 @@ function Sweets() {
     const [sweets, setSweets] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [searchParams, setSearchParams] = useState({ query: '', category: '' });
+    const [searchParams, setSearchParams] = useState({ 
+        query: '', 
+        category: '', 
+        minPrice: null, 
+        maxPrice: null 
+    });
     const [refreshTrigger, setRefreshTrigger] = useState(0); 
 
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -26,12 +31,29 @@ function Sweets() {
         try {
             let url = '/sweets';
             
-            // Add search parameters if they exist
-            const queryParams = new URLSearchParams();
-            if (searchParams.query) queryParams.append('name', searchParams.query);
-            if (searchParams.category) queryParams.append('category', searchParams.category);
+            // Check if we have any search parameters
+            const hasSearchParams = searchParams.query || 
+                                  searchParams.category || 
+                                  searchParams.minPrice !== null || 
+                                  searchParams.maxPrice !== null;
             
-            if (queryParams.toString()) {
+            if (hasSearchParams) {
+                // Build search URL with parameters
+                const queryParams = new URLSearchParams();
+                
+                if (searchParams.query && searchParams.query.trim()) {
+                    queryParams.append('name', searchParams.query.trim());
+                }
+                if (searchParams.category && searchParams.category.trim()) {
+                    queryParams.append('category', searchParams.category.trim());
+                }
+                if (searchParams.minPrice !== null && searchParams.minPrice >= 0) {
+                    queryParams.append('minPrice', searchParams.minPrice.toString());
+                }
+                if (searchParams.maxPrice !== null && searchParams.maxPrice >= 0) {
+                    queryParams.append('maxPrice', searchParams.maxPrice.toString());
+                }
+                
                 url = `/sweets/search?${queryParams.toString()}`;
             }
 
@@ -42,7 +64,7 @@ function Sweets() {
                 setError(response.data.message || "Failed to fetch sweets.");
             }
         } catch (err) {
-            setError(err.message || "Network error while fetching sweets.");
+            setError(err.response?.data?.message || err.message || "Network error while fetching sweets.");
         } finally {
             setLoading(false);
         }
@@ -74,12 +96,37 @@ function Sweets() {
         }
     };
 
-    const handleSearch = ({ query, category }) => setSearchParams({ query, category });
-    const handleClearSearch = () => setSearchParams({ query: '', category: '' });
+    const handleSearch = ({ query, category, minPrice, maxPrice }) => {
+        setSearchParams({ 
+            query: query || '', 
+            category: category || '', 
+            minPrice, 
+            maxPrice 
+        });
+    };
+
+    const handleClearSearch = () => {
+        setSearchParams({ 
+            query: '', 
+            category: '', 
+            minPrice: null, 
+            maxPrice: null 
+        });
+    };
 
     // Admin Handlers
-    const handleAddClick = () => { setModalMode('add'); setCurrentSweet(null); setIsModalOpen(true); };
-    const handleEditClick = (sweet) => { setModalMode('edit'); setCurrentSweet(sweet); setIsModalOpen(true); };
+    const handleAddClick = () => { 
+        setModalMode('add'); 
+        setCurrentSweet(null); 
+        setIsModalOpen(true); 
+    };
+
+    const handleEditClick = (sweet) => { 
+        setModalMode('edit'); 
+        setCurrentSweet(sweet); 
+        setIsModalOpen(true); 
+    };
+
     const handleDeleteClick = async (sweetId) => {
         if (!window.confirm("Are you sure you want to delete this sweet?")) return;
         try {
@@ -92,18 +139,28 @@ function Sweets() {
             setError(errorMsg);
         }
     };
+
     const handleFormSuccess = (updatedSweet) => { 
-        alert(`${modalMode==='add'?'Added':'Updated'} sweet successfully!`); 
+        alert(`${modalMode === 'add' ? 'Added' : 'Updated'} sweet successfully!`); 
         setIsModalOpen(false); 
         setRefreshTrigger(prev => prev + 1); 
     };
+
     const handleFormError = (message) => setError(message);
+
     const handleRestockClick = () => setIsRestockModalOpen(true);
+
     const handleRestockSuccess = (updatedSweet) => { 
         alert(`Restock successful! New quantity: ${updatedSweet.stock}`); 
         setIsRestockModalOpen(false); 
         setRefreshTrigger(prev => prev + 1); 
     };
+
+    // Check if any search filters are active
+    const hasActiveFilters = searchParams.query || 
+                            searchParams.category || 
+                            searchParams.minPrice !== null || 
+                            searchParams.maxPrice !== null;
 
     return (
         <div className="pt-24 min-h-[80vh] container mx-auto px-4 sm:px-6 lg:px-8 pb-12 bg-gray-50">
@@ -117,29 +174,68 @@ function Sweets() {
             {/* Admin Controls */}
             {isAdmin && (
                 <div className="mb-6 flex flex-wrap justify-end gap-4">
-                    <button onClick={handleRestockClick} className="bg-yellow-400 text-gray-900 p-3 rounded-lg font-semibold hover:bg-yellow-500 flex items-center space-x-2 transition-all">
+                    <button 
+                        onClick={handleRestockClick} 
+                        className="bg-yellow-400 text-gray-900 p-3 rounded-lg font-semibold hover:bg-yellow-500 flex items-center space-x-2 transition-all"
+                    >
                         <FaBoxes /> <span>Restock Inventory</span>
                     </button>
-                    <button onClick={handleAddClick} className="bg-green-400 text-white p-3 rounded-lg font-semibold hover:bg-green-500 flex items-center space-x-2 transition-all">
+                    <button 
+                        onClick={handleAddClick} 
+                        className="bg-green-400 text-white p-3 rounded-lg font-semibold hover:bg-green-500 flex items-center space-x-2 transition-all"
+                    >
                         <FaPlus /> <span>Add New Sweet</span>
                     </button>
                 </div>
             )}
 
             {/* Search & Filter */}
-            <SearchAndFilter onSearch={handleSearch} onClear={handleClearSearch} loading={loading} />
+            <SearchAndFilter 
+                onSearch={handleSearch} 
+                onClear={handleClearSearch} 
+                loading={loading} 
+            />
 
             {/* Error Message */}
             {error && (
-                <p className="bg-red-100 text-red-700 p-3 rounded-lg text-center mb-6">{error}</p>
+                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+                    <strong>Error:</strong> {error}
+                </div>
+            )}
+
+            {/* Results Summary */}
+            {!loading && hasActiveFilters && (
+                <div className="mb-4 text-center">
+                    <p className="text-gray-600">
+                        {sweets.length === 0 
+                            ? "No sweets found matching your search criteria" 
+                            : `Found ${sweets.length} sweet${sweets.length === 1 ? '' : 's'} matching your search`
+                        }
+                    </p>
+                </div>
             )}
 
             {/* Sweets Grid */}
             {loading ? (
-                <div className="text-center text-gray-700 text-xl py-12">Loading products...</div>
+                <div className="text-center text-gray-700 text-xl py-12">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-600 mx-auto mb-4"></div>
+                    Loading products...
+                </div>
             ) : sweets.length === 0 ? (
                 <div className="text-center text-gray-500 text-xl py-12">
-                    No products found. {searchParams.query || searchParams.category ? 'Try adjusting your search criteria.' : 'Check back later!'}
+                    <div className="mb-4">
+                        {hasActiveFilters ? (
+                            <>
+                                <h3 className="text-2xl font-semibold mb-2">No sweets found</h3>
+                                <p>Try adjusting your search criteria or clear the filters to see all products.</p>
+                            </>
+                        ) : (
+                            <>
+                                <h3 className="text-2xl font-semibold mb-2">No products available</h3>
+                                <p>Check back later for new sweet arrivals!</p>
+                            </>
+                        )}
+                    </div>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -160,11 +256,28 @@ function Sweets() {
             {/* Admin Modals */}
             {isAdmin && (
                 <>
-                    <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={modalMode === 'add' ? 'Add New Sweet' : `Edit ${currentSweet?.name || 'Sweet'}`}>
-                        <SweetForm mode={modalMode} sweet={currentSweet} onSuccess={handleFormSuccess} onError={handleFormError} />
+                    <Modal 
+                        isOpen={isModalOpen} 
+                        onClose={() => setIsModalOpen(false)} 
+                        title={modalMode === 'add' ? 'Add New Sweet' : `Edit ${currentSweet?.name || 'Sweet'}`}
+                    >
+                        <SweetForm 
+                            mode={modalMode} 
+                            sweet={currentSweet} 
+                            onSuccess={handleFormSuccess} 
+                            onError={handleFormError} 
+                        />
                     </Modal>
-                    <Modal isOpen={isRestockModalOpen} onClose={() => setIsRestockModalOpen(false)} title="Restock Sweet Inventory">
-                        <RestockForm onSuccess={handleRestockSuccess} onError={handleFormError} />
+                    
+                    <Modal 
+                        isOpen={isRestockModalOpen} 
+                        onClose={() => setIsRestockModalOpen(false)} 
+                        title="Restock Sweet Inventory"
+                    >
+                        <RestockForm 
+                            onSuccess={handleRestockSuccess} 
+                            onError={handleFormError} 
+                        />
                     </Modal>
                 </>
             )}

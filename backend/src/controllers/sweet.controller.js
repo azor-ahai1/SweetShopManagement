@@ -76,47 +76,54 @@ const getAllSweets = asyncHandler(async (req, res) => {
 const buySweet = asyncHandler(async (req, res) => {
     const { quantity, comment, price } = req.body;
     const buyer = req.user._id;
-    const sweet = req.params.sweet;
+    const sweetId = req.params.sweet;
 
-    const sweetItem = await Sweet.findById(sweet);
+    // Find the sweet
+    const sweetItem = await Sweet.findById(sweetId);
     if (!sweetItem) {
         throw new ApiError(404, "Sweet not found.");
     }
 
-    if (sweetItem.stock < quantity) {
+    const quantityNum = parseInt(quantity);
+    if (sweetItem.stock < quantityNum) {
         throw new ApiError(400, "Insufficient stock available.");
     }
 
     const order = await Purchase.create({
-        buyer, 
-        sweet, 
-        quantity, 
-        comment, 
-        price: price || sweetItem.price, 
-        orderDate: new Date(),
+        buyer,
+        sweet: sweetId,
+        quantity: quantityNum,
+        comment,
+        price: price || sweetItem.price,
     });
 
-    const sweetPurchase = await Purchase.findById(order._id)
-        .populate('sweet', 'name');
+    // Update user's purchase history
+    await User.findByIdAndUpdate(
+        buyer,
+        { $push: { purchaseHistory: order._id } }
+    );
 
-    if (!sweetPurchase) {
-        throw new ApiError(404, "Something went wrong while purchasing sweet.");
-    }
-
+    // Update sweet stock
     const updatedSweet = await Sweet.findByIdAndUpdate(
-        sweet,
-        { stock: sweetItem.stock - quantity },
+        sweetId,
+        { $inc: { stock: -quantityNum } },
         { new: true }
     );
 
     if (!updatedSweet) {
-        throw new ApiError(404, "Something went wrong while updating stock.");
+        throw new ApiError(500, "Something went wrong while updating stock.");
     }
+
+    // Populate purchase for response
+    const sweetPurchase = await Purchase.findById(order._id)
+        .populate('sweet', 'name category price image')
+        .populate('buyer', 'name email');
 
     return res.status(201).json(
         new ApiResponse(200, sweetPurchase, "Sweet Purchased Successfully")
     );
 });
+
 
 
 const addStock = asyncHandler(async (req, res) => {
@@ -219,28 +226,48 @@ const updateSweet = asyncHandler(async (req, res) => {
 
 const searchSweet = asyncHandler(async (req, res) => {
   const { name, category, minPrice, maxPrice } = req.query;
-
+  
+  // Build query object
   const query = {};
-
-  if (name) {
-    query.name = { $regex: name, $options: "i" };
+  
+  // Search by name (case-insensitive partial match)
+  if (name && name.trim()) {
+    query.name = { $regex: name.trim(), $options: "i" };
   }
-
-  if (category) {
-    query.category = category;
+  
+  // Filter by category (exact match)
+  if (category && category.trim()) {
+    query.category = category.trim();
   }
-
+  
+  // Filter by price range
   if (minPrice || maxPrice) {
     query.price = {};
-    if (minPrice) query.price.$gte = Number(minPrice);
-    if (maxPrice) query.price.$lte = Number(maxPrice);
+    if (minPrice) {
+      const min = Number(minPrice);
+      if (!isNaN(min) && min >= 0) {
+        query.price.$gte = min;
+      }
+    }
+    if (maxPrice) {
+      const max = Number(maxPrice);
+      if (!isNaN(max) && max >= 0) {
+        query.price.$lte = max;
+      }
+    }
   }
-
-  const sweets = await Sweet.find(query).populate("category", "name");
-
-  return res.status(200).json(
-    new ApiResponse(200, sweets, "Sweets searched successfully")
-  );
+  
+  try {
+    const sweets = await Sweet.find(query).sort({ name: 1 });
+    
+    return res.status(200).json(
+      new ApiResponse(200, sweets, `Found ${sweets.length} sweets matching your criteria`)
+    );
+  } catch (error) {
+    return res.status(500).json(
+      new ApiResponse(500, null, "Error searching sweets")
+    );
+  }
 });
 
 

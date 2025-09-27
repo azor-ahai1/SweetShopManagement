@@ -17,11 +17,17 @@ function Dashboard(){
         setLoading(true);
         setError(null);
         try {
-            // Fixed: Changed from '/api/v1/users/purchase-history' to '/users/purchase-history'
+            console.log("Fetching purchases...", user);
             const response = await axios.get('/users/purchase-history');
-            if (response?.data?.success) setPurchases(response.data.data.purchases || []);
-            else setError(response?.data?.message || "Failed to fetch purchase history.");
+            console.log("Response:", response.data);
+            
+            if (response?.data?.success) {
+                setPurchases(response.data.data.purchases || []);
+            } else {
+                setError(response?.data?.message || "Failed to fetch purchase history.");
+            }
         } catch (err) {
+            console.error("Purchase fetch error:", err);
             setError(err?.response?.data?.message || err?.message || "Network error while fetching purchase history.");
         } finally {
             setLoading(false);

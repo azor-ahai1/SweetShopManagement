@@ -2,18 +2,25 @@ import mongoose, { Schema } from "mongoose";
 
 const purchaseSchema = new mongoose.Schema(
     {
-        sweetID: {
+        sweet: {
             type: Schema.Types.ObjectId,
-            ref: 'Purchase'
+            ref: 'Sweet'
         },
 
-        price: {
-            type: String,
+        buyer: {
+            type: Schema.Types.ObjectId,
+            ref: 'User',
             required: true
         },
 
+        price: {
+            type: Number,
+            required: true
+        },
+        
         quantity: {
-            type: String,
+            type: Number,
+            required: true
         },
         
         comment: {

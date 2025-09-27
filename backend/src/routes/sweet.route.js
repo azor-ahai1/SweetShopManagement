@@ -5,6 +5,9 @@ import {upload} from "../middlewares/multer.middleware.js"
 
 const router = express.Router();
 
+
+router.get("/search", searchSweet);
+
 router.post("/create", verifyAdmin, upload.single("image"), createSweet);
 
 router.post("/:sweet/addStock", verifyAdmin, addStock);
@@ -17,6 +20,5 @@ router.post("/:sweet/purchase", verifyJWT, buySweet);
 
 router.get("/", getAllSweets);
 
-router.get("/search", searchSweet);
 
 export default router;
