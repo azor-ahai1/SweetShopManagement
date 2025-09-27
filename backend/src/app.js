@@ -1,7 +1,6 @@
 import express from 'express';
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import { ApiResponse } from './utils/ApiResponse.js';
 
 // ---------------------------------------------------------------------------------
 
@@ -38,9 +37,9 @@ import sweetRouter from "./routes/sweet.route.js";
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/sweets", sweetRouter);
 
-app.get('/', (req, res) => {
-    res.status(200).json(new ApiResponse(200, null, 'Welcome to Sweet Shop API'));
-});
+// app.get('/', (req, res) => {
+//     res.status(200).json(new ApiResponse(200, null, 'Welcome to Sweet Shop API'));
+// });
 
 
 

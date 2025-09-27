@@ -118,29 +118,55 @@ const getCurrentUser = asyncHandler(async (req, res) => {
 
 const getUserPurchaseHistory = asyncHandler(async (req, res) => {
     const userId = req.user._id;
-    
-    // Get purchases with proper population
-    const purchases = await Purchase.find({ buyer: userId })
-        .populate({
-            path: "sweet", 
-            select: "name category price image stock",
-            // Handle case where sweet might be deleted
-            options: { 
-                strictPopulate: false 
+   
+    try {
+        // Get purchases with proper population
+        const purchases = await Purchase.find({ buyer: userId })
+            .populate({
+                path: "sweet",
+                select: "name category price image stock",
+                // Handle case where sweet might be deleted
+                options: {
+                    strictPopulate: false
+                }
+            })
+            .sort({ createdAt: -1 })
+            .lean(); // Add lean() for better performance
+   
+        // Process purchases to handle deleted sweets and calculate totals
+        const processedPurchases = purchases.map(purchase => ({
+            ...purchase,
+            // Ensure we have the purchase price (fallback to sweet price if needed)
+            price: purchase.price || (purchase.sweet ? purchase.sweet.price : 0),
+            // Handle case where sweet might be null (deleted)
+            sweet: purchase.sweet || {
+                name: "Product Unavailable",
+                category: "Unknown",
+                price: purchase.price || 0,
+                image: "https://tse2.mm.bing.net/th/id/OIP.b2VM6VpFKtDuv1PUp3aj3AAAAA?rs=1&pid=ImgDetMain&o=7&rm=3",
+                stock: 0,
+                _id: null
             }
-        })
-        .sort({ createdAt: -1 });
+        }));
    
-    const totalPurchases = purchases.length;
-    const totalSpent = purchases.reduce((sum, purchase) => sum + (purchase.price * purchase.quantity), 0);
+        const totalPurchases = processedPurchases.length;
+        const totalSpent = processedPurchases.reduce((sum, purchase) => 
+            sum + (purchase.price * purchase.quantity), 0
+        );
    
-    return res.status(200).json(
-        new ApiResponse(200, {
-            purchases,
-            totalPurchases,
-            totalSpent
-        }, "User purchase history retrieved successfully")
-    );
+        return res.status(200).json(
+            new ApiResponse(200, {
+                purchases: processedPurchases,
+                totalPurchases,
+                totalSpent
+            }, "User purchase history retrieved successfully")
+        );
+    } catch (error) {
+        console.error("Error fetching purchase history:", error);
+        return res.status(500).json(
+            new ApiResponse(500, null, "Error fetching purchase history")
+        );
+    }
 });
 
 
