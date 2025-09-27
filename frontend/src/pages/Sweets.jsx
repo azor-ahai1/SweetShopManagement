@@ -52,21 +52,25 @@ function Sweets() {
         fetchSweets();
     }, [fetchSweets]);
 
-    const handlePurchase = async (sweetId, quantity = 1) => {
+    const handlePurchase = async (sweetId, purchaseData) => {
         try {
-            const sweetItem = sweets.find(s => s._id === sweetId);
-            const purchaseData = {
-                quantity,
-                price: sweetItem?.price || 0
-            };
+            const response = await axios.post(`/sweets/${sweetId}/purchase`, {
+                quantity: purchaseData.quantity,
+                comment: purchaseData.comment,
+                price: purchaseData.price
+            });
             
-            await axios.post(`/sweets/${sweetId}/purchase`, purchaseData);
-            alert("Purchase successful!!");
-            setRefreshTrigger(prev => prev + 1);
+            if (response.data.success) {
+                alert("Purchase successful!!");
+                setRefreshTrigger(prev => prev + 1);
+            } else {
+                throw new Error(response.data.message || 'Purchase failed');
+            }
         } catch (err) {
             const errorMsg = err.response?.data?.message || err.message;
             alert(`Purchase Failed: ${errorMsg}`);
             setError(errorMsg);
+            throw err; // Re-throw to let the modal handle the error
         }
     };
 
@@ -147,6 +151,7 @@ function Sweets() {
                             isAdmin={isAdmin} 
                             onEdit={handleEditClick} 
                             onDelete={handleDeleteClick} 
+                            user={user} 
                         />
                     ))}
                 </div>

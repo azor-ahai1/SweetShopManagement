@@ -1,5 +1,5 @@
 import express from "express";
-import { addStock, buySweet, createSweet, deleteSweet, getAllSweets, updateSweet } from "../controllers/sweet.controller.js";
+import { addStock, buySweet, createSweet, deleteSweet, getAllSweets, searchSweet, updateSweet } from "../controllers/sweet.controller.js";
 import { verifyJWT, verifyAdmin } from "../middlewares/auth.middleware.js";
 import {upload} from "../middlewares/multer.middleware.js"
 

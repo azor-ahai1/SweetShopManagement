@@ -48,6 +48,7 @@ const Header = () => {
 
   const menuItems = [
     { to: '/', icon: <FaHome />, label: 'Home' },
+    { to: '/sweets', icon: <span>🍬</span>, label: 'Sweets' },
     ...(userAuth ? [{ to: '/dashboard', icon: <FaUser />, label: 'Dashboard' }] : []),
   ];
 
@@ -61,8 +62,8 @@ const Header = () => {
           <span className="text-xl font-semibold text-gray-800">SweetShop</span>
         </Link>
 
-        <div className="hidden md:flex md:items-center md:gap-4 flex-1">
-          <nav className="ml-4 flex items-center gap-2">
+        <div className="hidden md:flex flex-1 justify-center">
+          <nav className="flex items-center gap-2">
             {menuItems.map((item, idx) => (
               <Link
                 key={idx}
