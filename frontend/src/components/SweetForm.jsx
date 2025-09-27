@@ -101,7 +101,7 @@ const SweetForm = ({ mode, sweet, onSuccess, onError }) => {
 
       {/* Price */}
       <div>
-        <label className="block text-gray-700 font-medium mb-2">Price ($)</label>
+        <label className="block text-gray-700 font-medium mb-2">Price (Rs)</label>
         <input
           type="number"
           step="0.01"
